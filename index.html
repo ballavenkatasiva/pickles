@@ -6,7 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-/* ======= GLOBAL STYLE ======= */
 body {
   margin: 0;
   font-family: Arial, sans-serif;
@@ -34,10 +33,7 @@ input, button {
   border: none;
   font-size: 16px;
 }
-input {
-  background: #28394a;
-  color: #fff;
-}
+input { background: #28394a; color: #fff; }
 button {
   background: #ff9a3c;
   color: #000;
@@ -46,47 +42,24 @@ button {
 }
 button:hover { background: #ffb469; }
 
-.msg {
-  margin-top: 10px;
-  color: #ffd7b5;
-  text-align: center;
-}
+.msg { margin-top: 10px; color: #ffd7b5; text-align: center; }
+.link { margin-top: 10px; text-align: center; color: #9ab3c9; cursor: pointer; }
 
-.link {
-  margin-top: 10px;
-  text-align: center;
-  color: #9ab3c9;
-  cursor: pointer;
-}
+#dashboard { display: none; max-width: 700px; margin: 30px auto; }
+.table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+.table th, .table td { padding: 10px; border-bottom: 1px solid #445566; }
+.table th { background: #233040; }
 
-/* Dashboard */
-#dashboard {
-  display: none;
-  max-width: 700px;
-  margin: 30px auto;
-}
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-}
-.table th, .table td {
-  padding: 10px;
-  border-bottom: 1px solid #445566;
-}
-.table th {
-  background: #233040;
-}
-.delete-btn {
-  background: #ff4d4d;
+.reply-btn {
+  background: #00d47b;
   color: white;
-  padding: 6px;
-  border-radius: 5px;
+  padding: 6px 10px;
+  border-radius: 6px;
   cursor: pointer;
 }
-
 </style>
 </head>
+
 <body>
 
 <!-- LOGIN / REGISTER -->
@@ -107,12 +80,8 @@ button:hover { background: #ffb469; }
 <div id="dashboard">
   <h2 id="dash-title" style="text-align:center;">Welcome ❤️</h2>
 
-  <!-- Admin Summary -->
-  <div id="admin-summary" style="display:none;text-align:center;margin-top:10px;font-size:18px;">
-    <b>Total Bookings: <span id="total-book-count">0</span></b>
-  </div>
-
-  <div class="container">
+  <!-- User Booking Form -->
+  <div id="user-form" class="container">
     <h3>Create Booking</h3>
     <input id="bname" placeholder="Customer Name">
     <input id="bitem" placeholder="Item (Mango Pickle)">
@@ -122,19 +91,21 @@ button:hover { background: #ffb469; }
     <div id="book-msg" class="msg"></div>
   </div>
 
+  <!-- All Bookings -->
   <div class="container" style="margin-top:20px;">
     <h3>All Bookings</h3>
     <table class="table" id="bookings-table">
       <thead>
         <tr>
-          <th>#</th><th>Name</th><th>Item</th><th>Qty</th><th>Phone</th><th>Date</th><th>Action</th>
+          <th>#</th><th>Name</th><th>Item</th><th>Qty</th><th>Phone</th><th>Date</th><th>Reply</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
   </div>
 
-  <button onclick="logout()" style="width:200px;margin:20px auto;display:block;background:#ff5252;color:#fff;">
+  <button onclick="logout()"
+    style="width:200px;margin:20px auto;display:block;background:#ff5252;color:#fff;">
     Logout
   </button>
 </div>
@@ -145,74 +116,61 @@ const api = "https://pickles-wn7g.onrender.com";
 
 let isAdmin = false;
 
-/* ===== LOGIN / REGISTER TOGGLE ===== */
+/* ===== LOGIN TOGGLE ===== */
 let mode = "login";
-const title = document.getElementById("form-title");
-const btn = document.getElementById("action-btn");
-const toggle = document.getElementById("toggle-form");
 const msg = document.getElementById("msg");
 
-toggle.onclick = () => {
+document.getElementById("toggle-form").onclick = () => {
   msg.innerHTML = "";
-  if (mode === "login") {
-    mode = "register";
-    title.innerText = "Register";
-    btn.innerText = "Create Account";
-    toggle.innerText = "Already have account? Login";
-  } else {
-    mode = "login";
-    title.innerText = "Login";
-    btn.innerText = "Login";
-    toggle.innerText = "Create new account?";
-  }
+  mode = mode === "login" ? "register" : "login";
+  document.getElementById("form-title").innerText = mode === "login" ? "Login" : "Register";
+  document.getElementById("action-btn").innerText = mode === "login" ? "Login" : "Create Account";
+  document.getElementById("toggle-form").innerText =
+    mode === "login" ? "Create new account?" : "Already have account? Login";
 };
 
-/* ===== LOGIN / REGISTER ACTION ===== */
-btn.onclick = async () => {
+/* ===== LOGIN / REGISTER ===== */
+document.getElementById("action-btn").onclick = async () => {
   msg.innerHTML = "";
-  const u = document.getElementById("username").value.trim();
-  const p = document.getElementById("password").value.trim();
+  const username = document.getElementById("username").value.trim();
+  const password = document.getElementById("password").value.trim();
 
-  if (!u || !p) { msg.innerHTML = "Enter username & password"; return; }
+  if (!username || !password) { msg.innerHTML = "Enter username & password"; return; }
 
-  const url = api + (mode === "login" ? "/login" : "/register");
-  const res = await fetch(url, {
+  const res = await fetch(api + (mode === "login" ? "/login" : "/register"), {
     method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({username:u, password:p})
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ username, password })
   });
+
   const data = await res.json();
 
-  if (data.success) {
-    if (mode === "login") {
-      document.getElementById("auth").style.display = "none";
-      document.getElementById("dashboard").style.display = "block";
-
-      isAdmin = data.admin === true;
-
-      if (isAdmin) {
-        document.getElementById("dash-title").innerText = "Admin Dashboard ❤️";
-        document.getElementById("admin-summary").style.display = "block";
-      } else {
-        document.getElementById("dash-title").innerText = "Welcome Bujji ❤️";
-        document.getElementById("admin-summary").style.display = "none";
-      }
-
-      loadBookings();
-    } else {
-      msg.style.color = "lightgreen";
-      msg.innerHTML = "Account created. Please login.";
-      mode = "login";
-      title.innerText = "Login";
-      btn.innerText = "Login";
-      toggle.innerText = "Create new account?";
-    }
-  } else {
+  if (!data.success) {
     msg.innerHTML = data.message || "Error";
+    return;
+  }
+
+  if (mode === "login") {
+    isAdmin = data.admin === true;
+
+    document.getElementById("auth").style.display = "none";
+    document.getElementById("dashboard").style.display = "block";
+
+    document.getElementById("dash-title").innerText =
+      isAdmin ? "Admin Dashboard ❤️" : "Welcome ❤️";
+
+    // Admin ki booking form kanapadakudadhu
+    document.getElementById("user-form").style.display = isAdmin ? "none" : "block";
+
+    loadBookings();
+  } else {
+    msg.style.color = "lightgreen";
+    msg.innerHTML = "Account created. Please login.";
+    mode = "login";
   }
 };
 
-/* ===== CREATE BOOKING ===== */
+/* ===== USER BOOKING ===== */
 document.getElementById("book-btn").onclick = async () => {
   const b = {
     name: document.getElementById("bname").value.trim(),
@@ -222,24 +180,13 @@ document.getElementById("book-btn").onclick = async () => {
     date: new Date().toLocaleString()
   };
 
-  if (!b.name || !b.item || !b.phone) {
-    document.getElementById("book-msg").innerHTML = "Fill all required fields.";
-    return;
-  }
-
   const res = await fetch(api + "/book", {
     method: "POST",
-    headers: {"Content-Type":"application/json"},
+    headers: {"Content-Type": "application/json"},
     body: JSON.stringify(b)
   });
 
-  const data = await res.json();
-
-  if (data.success) {
-    document.getElementById("book-msg").style.color = "lightgreen";
-    document.getElementById("book-msg").innerHTML = "Booking Saved!";
-    loadBookings();
-  }
+  loadBookings();
 };
 
 /* ===== LOAD BOOKINGS ===== */
@@ -259,18 +206,16 @@ async function loadBookings() {
         <td>${b.qty}</td>
         <td>${b.phone}</td>
         <td>${b.date}</td>
-        <td>${isAdmin ? `<button class='delete-btn' onclick='deleteBooking(${i})'>Delete</button>` : ''}</td>
+        <td><button class="reply-btn" onclick='sendReply("${b.phone}")'>Reply</button></td>
       </tr>
     `;
   });
-
-  document.getElementById("total-book-count").innerText = list.length;
 }
 
-/* ===== DELETE BOOKING (ADMIN ONLY) ===== */
-async function deleteBooking(id) {
-  await fetch(api + "/booking/" + id, { method: "DELETE" });
-  loadBookings();
+/* ===== REPLY VIA WHATSAPP ===== */
+function sendReply(phone) {
+  const msg = encodeURIComponent("Hello! Your pickle order request received. We will contact you shortly ❤️");
+  window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
 }
 
 /* ===== LOGOUT ===== */
