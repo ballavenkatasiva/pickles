@@ -77,6 +77,13 @@ button:hover { background: #ffb469; }
 .table th {
   background: #233040;
 }
+.delete-btn {
+  background: #ff4d4d;
+  color: white;
+  padding: 6px;
+  border-radius: 5px;
+  cursor: pointer;
+}
 
 </style>
 </head>
@@ -98,7 +105,12 @@ button:hover { background: #ffb469; }
 
 <!-- DASHBOARD -->
 <div id="dashboard">
-  <h2 style="text-align:center;">Welcome Bujji ❤️</h2>
+  <h2 id="dash-title" style="text-align:center;">Welcome ❤️</h2>
+
+  <!-- Admin Summary -->
+  <div id="admin-summary" style="display:none;text-align:center;margin-top:10px;font-size:18px;">
+    <b>Total Bookings: <span id="total-book-count">0</span></b>
+  </div>
 
   <div class="container">
     <h3>Create Booking</h3>
@@ -115,7 +127,7 @@ button:hover { background: #ffb469; }
     <table class="table" id="bookings-table">
       <thead>
         <tr>
-          <th>#</th><th>Name</th><th>Item</th><th>Qty</th><th>Phone</th><th>Date</th>
+          <th>#</th><th>Name</th><th>Item</th><th>Qty</th><th>Phone</th><th>Date</th><th>Action</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -128,10 +140,10 @@ button:hover { background: #ffb469; }
 </div>
 
 <script>
-/* ===== API URL (CHANGE BEFORE DEPLOY) ===== */
+/* ===== API URL ===== */
 const api = "https://pickles-wn7g.onrender.com";
-// Example after deploy:
-// const api = "https://bujji-pickles.onrender.com";
+
+let isAdmin = false;
 
 /* ===== LOGIN / REGISTER TOGGLE ===== */
 let mode = "login";
@@ -175,6 +187,17 @@ btn.onclick = async () => {
     if (mode === "login") {
       document.getElementById("auth").style.display = "none";
       document.getElementById("dashboard").style.display = "block";
+
+      isAdmin = data.admin === true;
+
+      if (isAdmin) {
+        document.getElementById("dash-title").innerText = "Admin Dashboard ❤️";
+        document.getElementById("admin-summary").style.display = "block";
+      } else {
+        document.getElementById("dash-title").innerText = "Welcome Bujji ❤️";
+        document.getElementById("admin-summary").style.display = "none";
+      }
+
       loadBookings();
     } else {
       msg.style.color = "lightgreen";
@@ -236,9 +259,18 @@ async function loadBookings() {
         <td>${b.qty}</td>
         <td>${b.phone}</td>
         <td>${b.date}</td>
+        <td>${isAdmin ? `<button class='delete-btn' onclick='deleteBooking(${i})'>Delete</button>` : ''}</td>
       </tr>
     `;
   });
+
+  document.getElementById("total-book-count").innerText = list.length;
+}
+
+/* ===== DELETE BOOKING (ADMIN ONLY) ===== */
+async function deleteBooking(id) {
+  await fetch(api + "/booking/" + id, { method: "DELETE" });
+  loadBookings();
 }
 
 /* ===== LOGOUT ===== */

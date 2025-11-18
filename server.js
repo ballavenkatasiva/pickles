@@ -36,12 +36,20 @@ app.post("/register", (req, res) => {
   res.json({ success: true });
 });
 
-app.post("/login", (req, res) => {
+  app.post("/login", (req, res) => {
   const { username, password } = req.body;
+
+  // Admin login (fixed credentials)
+  if (username === "admin" && password === "admin123") {
+    return res.json({ success: true, admin: true });
+  }
+
   const users = readJSON(usersFile);
   const user = users.find(u => u.username === username && u.password === password);
+
   if (!user) return res.json({ success: false, message: "Invalid credentials" });
-  res.json({ success: true });
+
+  res.json({ success: true, admin: false });
 });
 
 app.get("/", (req, res) => {
